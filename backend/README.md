@@ -149,6 +149,11 @@ $ alembic revision --autogenerate -m "Add column last_name to User model"
 $ alembic upgrade head
 ```
 
+Copy migrations file:
+```console
+docker compose cp backend:/app/app/alembic ./backend/app      
+```
+
 If you don't want to use migrations at all, uncomment the lines in the file at `./backend/app/core/db.py` that end in:
 
 ```python

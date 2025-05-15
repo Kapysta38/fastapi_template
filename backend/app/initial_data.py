@@ -1,16 +1,20 @@
 import logging
 
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 
-from app.core.db import engine, init_db
+from app.db.init_db import init_db
+from app.db.session import SessionLocal
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 def init() -> None:
-    with Session(engine) as session:
-        init_db(session)
+    db: Session = SessionLocal()
+    try:
+        init_db(db)
+    finally:
+        db.close()
 
 
 def main() -> None:
