@@ -1,26 +1,27 @@
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from app.core.config import settings
 from app.models import User
 
 
 def test_create_user(client: TestClient, db: Session) -> None:
-    r = client.post(
-        f"{settings.API_V1_STR}/private/users/",
-        json={
-            "email": "pollo@listo.com",
-            "password": "password123",
-            "full_name": "Pollo Listo",
-        },
-    )
+    payload = {
+        "email": "pollo@listo.com",
+        "password": "password123",
+        "full_name": "Pollo Listo",
+    }
 
-    assert r.status_code == 200
+    response = client.post(f"{settings.API_V1_STR}/private/users/", json=payload)
+    assert response.status_code == 200, response.text
 
-    data = r.json()
+    data = response.json()
+    assert "id" in data
+    assert data["email"] == payload["email"]
+    assert data["full_name"] == payload["full_name"]
 
-    user = db.exec(select(User).where(User.id == data["id"])).first()
-
-    assert user
-    assert user.email == "pollo@listo.com"
-    assert user.full_name == "Pollo Listo"
+    user_in_db = db.execute(select(User).where(User.id == data["id"])).scalar_one_or_none()
+    assert user_in_db is not None
+    assert user_in_db.email == payload["email"]
+    assert user_in_db.full_name == payload["full_name"]
