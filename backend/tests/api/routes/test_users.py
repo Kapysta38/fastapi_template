@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.security import verify_password
 from app.models import User
 from app.schemas import UserCreate
-from app.tests.utils.utils import random_email, random_lower_string
+from tests.utils.utils import random_email, random_lower_string
 
 
 def test_get_users_superuser_me(client: TestClient, superuser_token_headers: dict[str, str]) -> None:

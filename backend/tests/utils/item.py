@@ -3,7 +3,7 @@ from sqlmodel import Session
 from app.crud import item_crud
 from app.models import Item
 from app.schemas import ItemCreate
-from app.tests.utils.utils import random_lower_string
+from tests.utils.utils import random_lower_string
 
 
 def create_random_item(db: Session) -> Item:
