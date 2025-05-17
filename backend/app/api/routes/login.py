@@ -7,10 +7,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.api.deps import CurrentUser, SessionDep
 from app.core import security
 from app.core.config import settings
-from app.core.security import get_password_hash
 from app.crud.user import user_crud
-from app.schemas import Message, NewPassword, Token, UserPublic
-from app.utils import verify_password_reset_token
+from app.schemas import Token, UserPublic
 
 router = APIRouter(tags=["login"])
 

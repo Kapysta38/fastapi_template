@@ -1,9 +1,10 @@
+from datetime import datetime
 from collections.abc import Generator
 from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -11,12 +12,15 @@ from sqlalchemy.orm import Session
 from app.core import security
 from app.core.config import settings
 from app.db.session import SessionLocal
-from app.models import User
+from app.crud import api_crud
+from app.models import User, APIKey
 from app.schemas import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -59,3 +63,19 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def get_api_key_record(
+        session: SessionDep, api_key: Annotated[str | None, Depends(api_key_header)]
+) -> APIKey:
+    if not api_key:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key missing")
+
+    key_obj = api_crud.get(session, api_key)
+    if not key_obj:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
+
+    if key_obj.expires_at and key_obj.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key expired")
+
+    return key_obj

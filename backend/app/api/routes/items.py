@@ -1,9 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy import select, func
 
-from app.api.deps import SessionDep
+from app.api.deps import SessionDep, get_api_key_record
 from app.models import Item
 from app.crud import item_crud
 from app.schemas.item import ItemsPublic, ItemPublic, ItemUpdate, ItemCreate
@@ -12,7 +12,7 @@ from app.schemas.common import Message
 router = APIRouter(prefix="/items", tags=["items"])
 
 
-@router.get("/", response_model=ItemsPublic)
+@router.get("/",  dependencies=[Depends(get_api_key_record)], response_model=ItemsPublic)
 def read_items(
         db: SessionDep,
         skip: int = 0,
@@ -26,7 +26,7 @@ def read_items(
     return ItemsPublic(data=items, count=count)
 
 
-@router.get("/{id}", response_model=ItemPublic)
+@router.get("/{id}", dependencies=[Depends(get_api_key_record)], response_model=ItemPublic)
 def read_item(db: SessionDep, id: uuid.UUID) -> Item:
     """
     Get item by ID.
@@ -37,7 +37,7 @@ def read_item(db: SessionDep, id: uuid.UUID) -> Item:
     return item
 
 
-@router.post("/", response_model=ItemPublic)
+@router.post("/", dependencies=[Depends(get_api_key_record)], response_model=ItemPublic)
 def create_item(
         db: SessionDep,
         item_in: ItemCreate,
@@ -48,7 +48,7 @@ def create_item(
     return item_crud.create(db, item_in)
 
 
-@router.put("/{id}", response_model=ItemPublic)
+@router.put("/{id}", dependencies=[Depends(get_api_key_record)], response_model=ItemPublic)
 def update_item(
         db: SessionDep,
         id: uuid.UUID,
@@ -63,7 +63,7 @@ def update_item(
     return item_crud.update(db, db_obj=item, obj_in=item_in)
 
 
-@router.delete("/{id}", response_model=Message)
+@router.delete("/{id}", dependencies=[Depends(get_api_key_record)], response_model=Message)
 def delete_item(
         db: SessionDep,
         id: uuid.UUID,
