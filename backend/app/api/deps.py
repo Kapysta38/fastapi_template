@@ -1,5 +1,5 @@
 from datetime import datetime
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 import jwt
@@ -7,11 +7,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import security
 from app.core.config import settings
-from app.db.session import SessionLocal
+from app.db.session import AsyncSessionLocal
 from app.crud import api_crud
 from app.models import User, APIKey
 from app.schemas import TokenPayload
@@ -23,19 +23,16 @@ reusable_oauth2 = OAuth2PasswordBearer(
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
+        yield session
 
 
-SessionDep = Annotated[Session, Depends(get_db)]
+SessionDep = Annotated[AsyncSession, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
+async def get_current_user(session: SessionDep, token: TokenDep) -> User:
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
@@ -46,7 +43,7 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = session.get(User, token_data.sub)
+    user = await session.get(User, token_data.sub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:
@@ -65,13 +62,13 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
     return current_user
 
 
-def get_api_key_record(
+async def get_api_key_record(
         session: SessionDep, api_key: Annotated[str | None, Depends(api_key_header)]
 ) -> APIKey:
     if not api_key:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key missing")
 
-    key_obj = api_crud.get(session, api_key)
+    key_obj = await api_crud.get(session, api_key)
     if not key_obj:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
 

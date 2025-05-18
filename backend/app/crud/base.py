@@ -1,6 +1,9 @@
-from typing import TypeVar, Generic, Type, Optional, List, Any
-from sqlalchemy.orm import Session
+from typing import TypeVar, Generic, Type, Optional, Any, Sequence
 from pydantic import BaseModel
+
+from sqlalchemy.engine.result import ScalarResult
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.db.base import Base
 
@@ -13,22 +16,26 @@ class CRUDOnlyRead(Generic[ModelType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model
 
-    def get(self, db: Session, id: Any) -> Optional[ModelType]:
-        return db.query(self.model).get(id)
+    async def get(self, session: AsyncSession, id: Any) -> Optional[ModelType]:
+        return await session.get(self.model, id)
 
-    def get_multi(self, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]:
-        return db.query(self.model).offset(skip).limit(limit).all()
+    async def get_multi(
+            self, db: AsyncSession, *, skip: int = 0, limit: int = 100
+    ) -> Sequence[ModelType]:
+        stmt = select(self.model).offset(skip).limit(limit)
+        result: ScalarResult[ModelType] = await db.scalars(stmt)
+        return result.all()
 
 
 class CRUDCreateOnly(CRUDOnlyRead[ModelType], Generic[ModelType, CreateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         super().__init__(model)
 
-    def create(self, db: Session, obj_in: CreateSchemaType) -> ModelType:
+    async def create(self, session: AsyncSession, obj_in: CreateSchemaType) -> ModelType:
         obj = self.model(**obj_in.model_dump())
-        db.add(obj)
-        db.commit()
-        db.refresh(obj)
+        session.add(obj)
+        await session.commit()
+        await session.refresh(obj)
         return obj
 
 
@@ -36,13 +43,12 @@ class CRUDUpdateOnly(CRUDOnlyRead[ModelType], Generic[ModelType, UpdateSchemaTyp
     def __init__(self, model: Type[ModelType]):
         super().__init__(model)
 
-    def update(self, db: Session, db_obj: ModelType, obj_in: UpdateSchemaType) -> ModelType:
+    async def update(self, session: AsyncSession, db_obj: ModelType, obj_in: UpdateSchemaType) -> ModelType:
         update_data = obj_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(db_obj, field, value)
-        db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
+        await session.commit()
+        await session.refresh(db_obj)
         return db_obj
 
 
@@ -51,9 +57,9 @@ class CRUDBaseFull(CRUDCreateOnly[ModelType, CreateSchemaType], CRUDUpdateOnly[M
     def __init__(self, model: Type[ModelType]):
         super().__init__(model)
 
-    def remove(self, db: Session, id: Any) -> Optional[ModelType]:
-        obj = db.query(self.model).get(id)
+    async def remove(self, session: AsyncSession, id: Any) -> Optional[ModelType]:
+        obj = await self.get(session, id)
         if obj:
-            db.delete(obj)
-            db.commit()
+            await session.delete(obj)
+            await session.commit()
         return obj

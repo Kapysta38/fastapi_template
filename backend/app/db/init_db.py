@@ -1,18 +1,14 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud import user_crud
 from app.schemas import UserCreate
 from app.core.config import settings
-# from app.db.base import Base
-# from app.db.session import engine
+
 from app.models import *  # Импортируй модели, чтобы Base "знал" их
 
-def init_db(db: Session) -> None:
-    # Если не используешь Alembic:
-    # Base.metadata.create_all(bind=engine)
-
+async def init_db(session: AsyncSession) -> None:
     # Проверяем, есть ли суперпользователь
-    superuser = user_crud.get_by_email(db, settings.FIRST_SUPERUSER)
+    superuser = await user_crud.get_by_email(session, email=settings.FIRST_SUPERUSER)
     if not superuser:
         user_in = UserCreate(
             email=settings.FIRST_SUPERUSER,
@@ -21,4 +17,4 @@ def init_db(db: Session) -> None:
             is_active=True,
             full_name="Superuser",
         )
-        user_crud.create(db, user_in)
+        await user_crud.create(session, user_in)

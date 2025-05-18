@@ -8,8 +8,8 @@ router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 
 
 @router.post("/", dependencies=[Depends(get_current_active_superuser)], response_model=APIKeyPublic)
-def create_api_key(
+async def create_api_key(
     session: SessionDep,
     api_key_in: APIKeyCreate
 ):
-    return api_crud.create(session, api_key_in)
+    return await api_crud.create(session, api_key_in)

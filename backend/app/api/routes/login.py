@@ -14,13 +14,13 @@ router = APIRouter(tags=["login"])
 
 
 @router.post("/login/access-token")
-def login_access_token(
+async def login_access_token(
         session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = user_crud.authenticate(
+    user = await user_crud.authenticate(
         session, email=form_data.username, password=form_data.password
     )
     if not user:
@@ -36,7 +36,7 @@ def login_access_token(
 
 
 @router.post("/login/test-token", response_model=UserPublic)
-def test_token(current_user: CurrentUser) -> Any:
+async def test_token(current_user: CurrentUser) -> Any:
     """
     Test access token
     """
