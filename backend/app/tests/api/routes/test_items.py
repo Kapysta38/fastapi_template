@@ -1,15 +1,15 @@
 import uuid
-from httpx import AsyncClient
 
+from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.tests.utils.item import create_random_item
 
 
-async def test_create_item(client: AsyncClient, api_key_header: dict[str, str]) -> None:
+def test_create_item(client: TestClient, api_key_header: dict[str, str]) -> None:
     data = {"title": "Foo", "description": "Fighters"}
-    response = await client.post(
+    response = client.post(
         f"{settings.API_V1_STR}/items/",
         headers=api_key_header,
         json=data,
@@ -22,10 +22,10 @@ async def test_create_item(client: AsyncClient, api_key_header: dict[str, str]) 
 
 
 async def test_read_item(
-    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+    client: TestClient, api_key_header: dict[str, str], db: AsyncSession
 ) -> None:
     item = await create_random_item(db)
-    response = await client.get(
+    response = client.get(
         f"{settings.API_V1_STR}/items/{item.id}",
         headers=api_key_header,
     )
@@ -36,11 +36,11 @@ async def test_read_item(
     assert content["description"] == item.description
 
 
-async def test_read_item_not_found(
-    client: AsyncClient, api_key_header: dict[str, str]
+def test_read_item_not_found(
+    client: TestClient, api_key_header: dict[str, str]
 ) -> None:
     fake_id = str(uuid.uuid4())
-    response = await client.get(
+    response = client.get(
         f"{settings.API_V1_STR}/items/{fake_id}",
         headers=api_key_header,
     )
@@ -49,11 +49,11 @@ async def test_read_item_not_found(
 
 
 async def test_read_items(
-    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+    client: TestClient, api_key_header: dict[str, str], db: AsyncSession
 ) -> None:
     await create_random_item(db)
     await create_random_item(db)
-    response = await client.get(
+    response = client.get(
         f"{settings.API_V1_STR}/items/",
         headers=api_key_header,
     )
@@ -65,11 +65,11 @@ async def test_read_items(
 
 
 async def test_update_item(
-    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+    client: TestClient, api_key_header: dict[str, str], db: AsyncSession
 ) -> None:
     item = await create_random_item(db)
     data = {"title": "Updated title", "description": "Updated description"}
-    response = await client.put(
+    response = client.put(
         f"{settings.API_V1_STR}/items/{item.id}",
         headers=api_key_header,
         json=data,
@@ -81,12 +81,12 @@ async def test_update_item(
     assert content["description"] == data["description"]
 
 
-async def test_update_item_not_found(
-    client: AsyncClient, api_key_header: dict[str, str]
+def test_update_item_not_found(
+    client: TestClient, api_key_header: dict[str, str]
 ) -> None:
     data = {"title": "Updated title", "description": "Updated description"}
     fake_id = str(uuid.uuid4())
-    response = await client.put(
+    response = client.put(
         f"{settings.API_V1_STR}/items/{fake_id}",
         headers=api_key_header,
         json=data,
@@ -96,10 +96,10 @@ async def test_update_item_not_found(
 
 
 async def test_delete_item(
-    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+    client: TestClient, api_key_header: dict[str, str], db: AsyncSession
 ) -> None:
     item = await create_random_item(db)
-    response = await client.delete(
+    response = client.delete(
         f"{settings.API_V1_STR}/items/{item.id}",
         headers=api_key_header,
     )
@@ -108,11 +108,11 @@ async def test_delete_item(
     assert content["message"] == "Item deleted successfully"
 
 
-async def test_delete_item_not_found(
-    client: AsyncClient, api_key_header: dict[str, str]
+def test_delete_item_not_found(
+    client: TestClient, api_key_header: dict[str, str]
 ) -> None:
     fake_id = str(uuid.uuid4())
-    response = await client.delete(
+    response = client.delete(
         f"{settings.API_V1_STR}/items/{fake_id}",
         headers=api_key_header,
     )

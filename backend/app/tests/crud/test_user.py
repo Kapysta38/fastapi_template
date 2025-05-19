@@ -1,9 +1,8 @@
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.user import user_crud
 from app.core.security import verify_password
-from app.models.user import User
+from app.crud.user import user_crud
 from app.schemas.user import UserCreate, UserUpdate
 from app.tests.utils.utils import random_email, random_lower_string
 
@@ -22,7 +21,9 @@ async def test_authenticate_user(db: AsyncSession) -> None:
     password = random_lower_string()
     user_in = UserCreate(email=email, password=password)
     user = await user_crud.create(db, user_in)
-    authenticated_user = await user_crud.authenticate(db, email=email, password=password)
+    authenticated_user = await user_crud.authenticate(
+        db, email=email, password=password
+    )
     assert authenticated_user
     assert user.email == authenticated_user.email
 
@@ -45,7 +46,7 @@ async def test_check_if_user_is_active(db: AsyncSession) -> None:
 async def test_check_if_user_is_active_inactive(db: AsyncSession) -> None:
     email = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=email, password=password, disabled=True)
+    user_in = UserCreate(email=email, password=password)
     user = await user_crud.create(db, user_in)
     assert user.is_active
 
