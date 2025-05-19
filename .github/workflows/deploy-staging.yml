@@ -3,7 +3,8 @@ name: Deploy to Staging
 on:
   push:
     branches:
-      - main
+    # changethis :)
+      - changethis
 
 jobs:
   deploy:
