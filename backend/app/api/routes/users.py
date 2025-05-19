@@ -86,7 +86,11 @@ async def update_user_me(
         if existing and existing.id != current_user.id:
             raise HTTPException(status_code=409, detail="Email already in use")
 
-    user = await user_crud.update(session, current_user, user_in)
+    user = await user_crud.update(
+        session,
+        current_user,
+        UserUpdate.model_validate(user_in.model_dump(exclude_unset=True)),
+    )
     return UserPublic.model_validate(user)
 
 
