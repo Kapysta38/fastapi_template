@@ -9,9 +9,6 @@ from app.schemas.api_key import APIKeyCreate
 
 
 class CRUDAPIKey(CRUDCreateOnly[APIKey, APIKeyCreate]):
-    def __init__(self):
-        super().__init__(APIKey)
-
     async def create(self, session: AsyncSession, obj_in: APIKeyCreate) -> APIKey:
         # генерируем 256-битный токен
         # TODO : hash token in DB
@@ -41,4 +38,4 @@ class CRUDAPIKey(CRUDCreateOnly[APIKey, APIKeyCreate]):
         return result.first()
 
 
-api_crud = CRUDAPIKey()
+api_crud = CRUDAPIKey(APIKey)

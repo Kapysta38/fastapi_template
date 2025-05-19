@@ -31,8 +31,8 @@ async def read_items(
 
     # Сами записи
     items = await item_crud.get_multi(session, skip=skip, limit=limit)
-
-    return ItemsPublic(data=items, count=count)
+    items_public = [ItemPublic.model_validate(item) for item in items]
+    return ItemsPublic(data=items_public, count=count)
 
 
 @router.get(
@@ -47,7 +47,7 @@ async def read_item(session: SessionDep, id: uuid.UUID) -> ItemPublic:
     item = await item_crud.get(session, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    return item
+    return ItemPublic.model_validate(item)
 
 
 @router.post(
@@ -63,7 +63,8 @@ async def create_item(
     """
     Create new item.
     """
-    return await item_crud.create(session, item_in)
+    item = await item_crud.create(session, item_in)
+    return ItemPublic.model_validate(item)
 
 
 @router.put(
@@ -82,7 +83,8 @@ async def update_item(
     item = await item_crud.get(session, id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    return await item_crud.update(session, db_obj=item, obj_in=item_in)
+    item = await item_crud.update(session, db_obj=item, obj_in=item_in)
+    return ItemPublic.model_validate(item)
 
 
 @router.delete(

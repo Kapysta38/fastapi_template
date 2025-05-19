@@ -35,7 +35,7 @@ class CRUDCreateOnly(CRUDOnlyRead[ModelType], Generic[ModelType, CreateSchemaTyp
     async def create(
         self, session: AsyncSession, obj_in: CreateSchemaType
     ) -> ModelType:
-        obj = self.model(**obj_in.model_dump())
+        obj: ModelType = self.model(**obj_in.model_dump())
         session.add(obj)
         await session.commit()
         await session.refresh(obj)

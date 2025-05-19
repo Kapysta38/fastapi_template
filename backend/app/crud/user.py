@@ -8,9 +8,6 @@ from app.schemas.user import UserCreate, UserUpdate
 
 
 class CRUDUser(CRUDBaseFull[User, UserCreate, UserUpdate]):
-    def __init__(self):
-        super().__init__(User)
-
     async def get_by_email(self, db: AsyncSession, email: str) -> User | None:
         stmt = select(self.model).where(self.model.email == email).limit(1)
         result = await db.scalars(stmt)
@@ -55,4 +52,4 @@ class CRUDUser(CRUDBaseFull[User, UserCreate, UserUpdate]):
         return user
 
 
-user_crud = CRUDUser()
+user_crud = CRUDUser(User)

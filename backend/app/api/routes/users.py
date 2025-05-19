@@ -36,7 +36,8 @@ async def read_users(
     count: int = count_result.scalar_one()
 
     users = await user_crud.get_multi(session, skip=skip, limit=limit)
-    return UsersPublic(data=users, count=count)
+    users_public = [UserPublic.model_validate(user) for user in users]
+    return UsersPublic(data=users_public, count=count)
 
 
 @router.post(
@@ -52,7 +53,7 @@ async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
             status_code=400, detail="User with this email already exists."
         )
     user = await user_crud.create(session, user_in)
-    return user
+    return UserPublic.model_validate(user)
 
 
 @router.post("/signup", response_model=UserPublic, status_code=201)
@@ -65,12 +66,13 @@ async def register_user(session: SessionDep, user_in: UserRegister) -> UserPubli
         password=user_in.password,
         full_name=user_in.full_name,
     )
-    return await user_crud.create(session, user_create)
+    user = await user_crud.create(session, user_create)
+    return UserPublic.model_validate(user)
 
 
 @router.get("/me", response_model=UserPublic)
 async def read_user_me(current_user: CurrentUser) -> UserPublic:
-    return current_user
+    return UserPublic.model_validate(current_user)
 
 
 @router.patch("/me", response_model=UserPublic)
@@ -84,7 +86,8 @@ async def update_user_me(
         if existing and existing.id != current_user.id:
             raise HTTPException(status_code=409, detail="Email already in use")
 
-    return await user_crud.update(session, db_obj=current_user, obj_in=user_in)
+    user = await user_crud.update(session, current_user, user_in)
+    return UserPublic.model_validate(user)
 
 
 @router.patch("/me/password", response_model=Message)
@@ -129,7 +132,7 @@ async def read_user_by_id(
     user = await user_crud.get(session, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return UserPublic.model_validate(user)
 
 
 @router.patch(
@@ -151,7 +154,8 @@ async def update_user(
         if existing and existing.id != user_id:
             raise HTTPException(status_code=409, detail="Email already exists")
 
-    return await user_crud.update(session, db_obj=db_user, obj_in=user_in)
+    user = await user_crud.update(session, db_obj=db_user, obj_in=user_in)
+    return UserPublic.model_validate(user)
 
 
 @router.delete(
