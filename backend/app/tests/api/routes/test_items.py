@@ -1,28 +1,31 @@
 import uuid
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+from httpx import AsyncClient
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from tests.utils.item import create_random_item
+from app.tests.utils.item import create_random_item
 
 
-def test_create_item(client: TestClient, api_key_header: dict[str, str]) -> None:
+async def test_create_item(client: AsyncClient, api_key_header: dict[str, str]) -> None:
     data = {"title": "Foo", "description": "Fighters"}
-    response = client.post(
+    response = await client.post(
         f"{settings.API_V1_STR}/items/",
         headers=api_key_header,
         json=data,
     )
-    assert response.status_code == 200, response.text
+    assert response.status_code == 201, response.text
     content = response.json()
     assert content["title"] == data["title"]
     assert content["description"] == data["description"]
     assert "id" in content
 
 
-def test_read_item(client: TestClient, api_key_header: dict[str, str], db: Session) -> None:
-    item = create_random_item(db)
-    response = client.get(
+async def test_read_item(
+    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+) -> None:
+    item = await create_random_item(db)
+    response = await client.get(
         f"{settings.API_V1_STR}/items/{item.id}",
         headers=api_key_header,
     )
@@ -33,9 +36,11 @@ def test_read_item(client: TestClient, api_key_header: dict[str, str], db: Sessi
     assert content["description"] == item.description
 
 
-def test_read_item_not_found(client: TestClient, api_key_header: dict[str, str]) -> None:
+async def test_read_item_not_found(
+    client: AsyncClient, api_key_header: dict[str, str]
+) -> None:
     fake_id = str(uuid.uuid4())
-    response = client.get(
+    response = await client.get(
         f"{settings.API_V1_STR}/items/{fake_id}",
         headers=api_key_header,
     )
@@ -43,10 +48,12 @@ def test_read_item_not_found(client: TestClient, api_key_header: dict[str, str])
     assert response.json()["detail"] == "Item not found"
 
 
-def test_read_items(client: TestClient, api_key_header: dict[str, str], db: Session) -> None:
-    create_random_item(db)
-    create_random_item(db)
-    response = client.get(
+async def test_read_items(
+    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+) -> None:
+    await create_random_item(db)
+    await create_random_item(db)
+    response = await client.get(
         f"{settings.API_V1_STR}/items/",
         headers=api_key_header,
     )
@@ -57,10 +64,12 @@ def test_read_items(client: TestClient, api_key_header: dict[str, str], db: Sess
     assert "count" in content
 
 
-def test_update_item(client: TestClient, api_key_header: dict[str, str], db: Session) -> None:
-    item = create_random_item(db)
+async def test_update_item(
+    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+) -> None:
+    item = await create_random_item(db)
     data = {"title": "Updated title", "description": "Updated description"}
-    response = client.put(
+    response = await client.put(
         f"{settings.API_V1_STR}/items/{item.id}",
         headers=api_key_header,
         json=data,
@@ -72,10 +81,12 @@ def test_update_item(client: TestClient, api_key_header: dict[str, str], db: Ses
     assert content["description"] == data["description"]
 
 
-def test_update_item_not_found(client: TestClient, api_key_header: dict[str, str]) -> None:
+async def test_update_item_not_found(
+    client: AsyncClient, api_key_header: dict[str, str]
+) -> None:
     data = {"title": "Updated title", "description": "Updated description"}
     fake_id = str(uuid.uuid4())
-    response = client.put(
+    response = await client.put(
         f"{settings.API_V1_STR}/items/{fake_id}",
         headers=api_key_header,
         json=data,
@@ -84,9 +95,11 @@ def test_update_item_not_found(client: TestClient, api_key_header: dict[str, str
     assert response.json()["detail"] == "Item not found"
 
 
-def test_delete_item(client: TestClient, api_key_header: dict[str, str], db: Session) -> None:
-    item = create_random_item(db)
-    response = client.delete(
+async def test_delete_item(
+    client: AsyncClient, api_key_header: dict[str, str], db: AsyncSession
+) -> None:
+    item = await create_random_item(db)
+    response = await client.delete(
         f"{settings.API_V1_STR}/items/{item.id}",
         headers=api_key_header,
     )
@@ -95,9 +108,11 @@ def test_delete_item(client: TestClient, api_key_header: dict[str, str], db: Ses
     assert content["message"] == "Item deleted successfully"
 
 
-def test_delete_item_not_found(client: TestClient, api_key_header: dict[str, str]) -> None:
+async def test_delete_item_not_found(
+    client: AsyncClient, api_key_header: dict[str, str]
+) -> None:
     fake_id = str(uuid.uuid4())
-    response = client.delete(
+    response = await client.delete(
         f"{settings.API_V1_STR}/items/{fake_id}",
         headers=api_key_header,
     )
