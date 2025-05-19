@@ -1,14 +1,16 @@
 import asyncio
 import logging
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from tenacity import (
+    after_log,
+    before_log,
     retry,
     stop_after_attempt,
     wait_fixed,
-    before_log,
-    after_log,
 )
+
 from app.db.session import engine
 
 logging.basicConfig(level=logging.INFO)

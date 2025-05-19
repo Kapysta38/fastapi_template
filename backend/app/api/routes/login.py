@@ -8,14 +8,15 @@ from app.api.deps import CurrentUser, SessionDep
 from app.core import security
 from app.core.config import settings
 from app.crud.user import user_crud
-from app.schemas import Token, UserPublic
+from app.schemas.common import Token
+from app.schemas.user import UserPublic
 
 router = APIRouter(tags=["login"])
 
 
 @router.post("/login/access-token")
 async def login_access_token(
-        session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests

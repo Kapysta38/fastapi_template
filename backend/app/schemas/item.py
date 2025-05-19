@@ -1,12 +1,12 @@
 import uuid
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 # Базовые свойства
 class ItemBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(default=None, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
 
 
 # Создание
@@ -16,8 +16,8 @@ class ItemCreate(ItemBase):
 
 # Обновление
 class ItemUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=1, max_length=255)
-    description: Optional[str] = Field(default=None, max_length=255)
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
 
 
 # Ответ через API

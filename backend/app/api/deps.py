@@ -1,20 +1,21 @@
-from datetime import datetime
 from collections.abc import AsyncGenerator
+from datetime import datetime
 from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
+from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import security
 from app.core.config import settings
+from app.crud.api_key import api_crud
 from app.db.session import AsyncSessionLocal
-from app.crud import api_crud
-from app.models import User, APIKey
-from app.schemas import TokenPayload
+from app.models.api_key import APIKey
+from app.models.user import User
+from app.schemas.common import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
@@ -63,16 +64,22 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
 
 
 async def get_api_key_record(
-        session: SessionDep, api_key: Annotated[str | None, Depends(api_key_header)]
+    session: SessionDep, api_key: Annotated[str | None, Depends(api_key_header)]
 ) -> APIKey:
     if not api_key:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key missing")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="API key missing"
+        )
 
     key_obj = await api_crud.get(session, api_key)
     if not key_obj:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key"
+        )
 
-    if key_obj.expires_at and key_obj.expires_at < datetime.utcnow():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key expired")
+    if key_obj.expires_at and key_obj.expires_at < datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="API key expired"
+        )
 
     return key_obj

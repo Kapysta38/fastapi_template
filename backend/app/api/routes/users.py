@@ -3,20 +3,20 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 
-from app.api.deps import SessionDep, CurrentUser, get_current_active_superuser
+from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core.security import get_password_hash, verify_password
-from app.schemas import (
+from app.crud.user import user_crud
+from app.models.user import User
+from app.schemas.common import Message
+from app.schemas.user import (
+    UpdatePassword,
     UserCreate,
-    UserRegister,
     UserPublic,
+    UserRegister,
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
-    UpdatePassword,
-    Message
 )
-from app.crud import user_crud
-from app.models import User
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -27,9 +27,9 @@ router = APIRouter(prefix="/users", tags=["users"])
     response_model=UsersPublic,
 )
 async def read_users(
-        session: SessionDep,
-        skip: int = 0,
-        limit: int = 100,
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100,
 ) -> UsersPublic:
     """Return paginated list of users (superuser-only)."""
     count_result = await session.execute(select(func.count()).select_from(User))
@@ -48,7 +48,9 @@ async def read_users(
 async def create_user(session: SessionDep, user_in: UserCreate) -> UserPublic:
     existing = await user_crud.get_by_email(session, user_in.email)
     if existing:
-        raise HTTPException(status_code=400, detail="User with this email already exists.")
+        raise HTTPException(
+            status_code=400, detail="User with this email already exists."
+        )
     user = await user_crud.create(session, user_in)
     return user
 
@@ -73,9 +75,9 @@ async def read_user_me(current_user: CurrentUser) -> UserPublic:
 
 @router.patch("/me", response_model=UserPublic)
 async def update_user_me(
-        session: SessionDep,
-        current_user: CurrentUser,
-        user_in: UserUpdateMe,
+    session: SessionDep,
+    current_user: CurrentUser,
+    user_in: UserUpdateMe,
 ) -> UserPublic:
     if user_in.email:
         existing = await user_crud.get_by_email(session, user_in.email)
@@ -87,9 +89,9 @@ async def update_user_me(
 
 @router.patch("/me/password", response_model=Message)
 async def update_password_me(
-        session: SessionDep,
-        current_user: CurrentUser,
-        body: UpdatePassword,
+    session: SessionDep,
+    current_user: CurrentUser,
+    body: UpdatePassword,
 ) -> Message:
     if not verify_password(body.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect current password")
@@ -106,7 +108,9 @@ async def update_password_me(
 @router.delete("/me", response_model=Message)
 async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Message:
     if current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Superusers cannot delete themselves")
+        raise HTTPException(
+            status_code=403, detail="Superusers cannot delete themselves"
+        )
 
     await session.delete(current_user)
     await session.commit()
@@ -115,9 +119,9 @@ async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Mess
 
 @router.get("/{user_id}", response_model=UserPublic)
 async def read_user_by_id(
-        user_id: uuid.UUID,
-        session: SessionDep,
-        current_user: CurrentUser,
+    user_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
 ) -> UserPublic:
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Insufficient privileges")
@@ -134,9 +138,9 @@ async def read_user_by_id(
     response_model=UserPublic,
 )
 async def update_user(
-        session: SessionDep,
-        user_id: uuid.UUID,
-        user_in: UserUpdate,
+    session: SessionDep,
+    user_id: uuid.UUID,
+    user_in: UserUpdate,
 ) -> UserPublic:
     db_user = await user_crud.get(session, user_id)
     if not db_user:
@@ -156,9 +160,9 @@ async def update_user(
     response_model=Message,
 )
 async def delete_user(
-        session: SessionDep,
-        current_user: CurrentUser,
-        user_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+    user_id: uuid.UUID,
 ) -> Message:
     user = await user_crud.get(session, user_id)
     if not user:

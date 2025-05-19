@@ -1,21 +1,18 @@
-from typing import Optional
 from secrets import token_urlsafe
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import APIKey
-from app.schemas import APIKeyCreate
 from app.crud.base import CRUDCreateOnly
+from app.models.api_key import APIKey
+from app.schemas.api_key import APIKeyCreate
 
 
 class CRUDAPIKey(CRUDCreateOnly[APIKey, APIKeyCreate]):
     def __init__(self):
         super().__init__(APIKey)
 
-    async def create(
-            self, session: AsyncSession, obj_in: APIKeyCreate
-    ) -> APIKey:
+    async def create(self, session: AsyncSession, obj_in: APIKeyCreate) -> APIKey:
         # генерируем 256-битный токен
         # TODO : hash token in DB
         key_plain = token_urlsafe(32)
@@ -31,9 +28,7 @@ class CRUDAPIKey(CRUDCreateOnly[APIKey, APIKeyCreate]):
         await session.refresh(db_key)
         return db_key
 
-    async def get(
-            self, session: AsyncSession, raw_key: str
-    ) -> Optional[APIKey]:
+    async def get(self, session: AsyncSession, raw_key: str) -> APIKey | None:
         stmt = (
             select(self.model)
             .where(

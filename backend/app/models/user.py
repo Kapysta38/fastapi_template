@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean
+from sqlalchemy import Boolean, Column, String
 
 from app.db.base import Base
 from app.db.mixins import BaseModelMixin

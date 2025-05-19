@@ -1,12 +1,12 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 # Базовая схема (общие поля)
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: Optional[str] = None
+    full_name: str | None = None
     is_active: bool = True
     is_superuser: bool = False
 
@@ -20,22 +20,22 @@ class UserCreate(UserBase):
 class UserRegister(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=40)
-    full_name: Optional[str] = None
+    full_name: str | None = None
 
 
 # При обновлении (всё необязательное)
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    password: Optional[str] = Field(default=None, min_length=8, max_length=40)
-    full_name: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_superuser: Optional[bool] = None
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=40)
+    full_name: str | None = None
+    is_active: bool | None = None
+    is_superuser: bool | None = None
 
 
 # Обновление текущего пользователя
 class UserUpdateMe(BaseModel):
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
+    email: EmailStr | None = None
+    full_name: str | None = None
 
 
 # Обновление пароля

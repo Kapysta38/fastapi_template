@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class Message(BaseModel):
@@ -14,4 +14,3 @@ class Token(BaseModel):
 # Contents of JWT token
 class TokenPayload(BaseModel):
     sub: str | None = None
-

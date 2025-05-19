@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud import user_crud
-from app.schemas import UserCreate
 from app.core.config import settings
+from app.crud.user import user_crud
+from app.schemas.user import UserCreate
 
-from app.models import *  # Импортируй модели, чтобы Base "знал" их
 
 async def init_db(session: AsyncSession) -> None:
     # Проверяем, есть ли суперпользователь
